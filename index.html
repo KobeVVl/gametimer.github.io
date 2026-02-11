@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Game Timer</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <div class="app">
+        <header class="topbar">
+            <h1>Game Timer</h1>
+            <div class="status" id="statusText">Not started</div>
+        </header>
+
+        <main>
+            <section class="panel" id="setupPanel">
+                <h2>Setup</h2>
+                <div class="grid">
+                    <label class="field">
+                        <span>Number of players</span>
+                        <input id="playerCount" type="number" min="1" max="12" value="4" />
+                    </label>
+                    <div class="field">
+                        <span>Starting time</span>
+                        <div class="time-input">
+                            <label>
+                                <span class="muted">Minutes</span>
+                                <input id="startingMinutes" type="number" min="0" max="300" value="20" />
+                            </label>
+                            <label>
+                                <span class="muted">Seconds</span>
+                                <input id="startingSeconds" type="number" min="0" max="59" value="0" />
+                            </label>
+                        </div>
+                    </div>
+                    <label class="field">
+                        <span>Time mode</span>
+                        <select id="timeMode">
+                            <option value="total" selected>Total time per player</option>
+                            <option value="perTurn">Per-turn reset time</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>Time added on turn end/start (seconds)</span>
+                        <input id="turnIncrement" type="number" min="0" max="300" value="0" />
+                    </label>
+                    <label class="field">
+                        <span>Auto-start timer on next player</span>
+                        <select id="autoStart">
+                            <option value="true" selected>Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>Individual pause buttons</span>
+                        <select id="individualPause">
+                            <option value="false" selected>Off</option>
+                            <option value="true">On</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>Play alert when time is low</span>
+                        <select id="lowTimeAlert">
+                            <option value="true" selected>On</option>
+                            <option value="false">Off</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="players" id="playersContainer"></div>
+
+                <div class="actions">
+                    <button class="btn primary" id="startGame">Start Game</button>
+                </div>
+            </section>
+
+            <section class="panel hidden" id="timerPanel">
+                <div class="timer-header">
+                    <div>
+                        <h2 id="currentPlayerName">Player 1</h2>
+                        <p class="muted" id="turnCounter">Turn 1</p>
+                    </div>
+                    <div class="timer-display" id="timerDisplay">20:00</div>
+                </div>
+
+                <div class="adjustments">
+                    <h3>Adjust Time</h3>
+                    <div class="adjust-grid">
+                        <button class="btn subtle" data-adjust="-60">-1:00</button>
+                        <button class="btn subtle" data-adjust="-30">-0:30</button>
+                        <button class="btn subtle" data-adjust="-10">-0:10</button>
+                        <button class="btn subtle" data-adjust="10">+0:10</button>
+                        <button class="btn subtle" data-adjust="30">+0:30</button>
+                        <button class="btn subtle" data-adjust="60">+1:00</button>
+                    </div>
+                </div>
+
+                <div class="player-list" id="playerList"></div>
+
+                <div class="timer-controls">
+                    <button class="btn ghost" id="pauseToggle">Pause</button>
+                    <button class="btn primary next-big" id="nextPlayer">Next Player</button>
+                    <button class="btn danger" id="resetGame">Reset</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <audio id="alertSound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRlQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQwAAAAA"
+            type="audio/wav" />
+    </audio>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
