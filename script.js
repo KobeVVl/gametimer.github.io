@@ -19,9 +19,31 @@ const currentPlayerName = document.getElementById("currentPlayerName");
 const turnCounter = document.getElementById("turnCounter");
 const statusText = document.getElementById("statusText");
 const playerList = document.getElementById("playerList");
-const alertSound = document.getElementById("alertSound");
 
 const DEFAULT_PLAYER_NAMES = ["Player 1", "Player 2", "Player 3", "Player 4"];
+
+// Generate a beep sound using Web Audio API
+function playBeep() {
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.frequency.value = 1000; // 1000 Hz beep
+        oscillator.type = "sine";
+
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.2);
+    } catch (e) {
+        // Fallback if Audio API unavailable
+    }
+}
 const PRESET_STORAGE_KEY = "gameTimerPreset";
 const PRESET_COLORS = [
     { label: "Marquise The Cat", value: "#f18025" },
@@ -324,8 +346,8 @@ function tick() {
 
     player.remainingSeconds = Math.max(0, player.remainingSeconds - 1);
 
-    if (state.settings.lowTimeAlert && player.remainingSeconds === LOW_TIME_THRESHOLD) {
-        alertSound.play().catch(() => { });
+    if (state.settings.lowTimeAlert && player.remainingSeconds <= LOW_TIME_THRESHOLD && player.remainingSeconds > 0) {
+        playBeep();
     }
 
     updateTimerDisplay();
