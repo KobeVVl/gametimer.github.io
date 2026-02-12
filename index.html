@@ -18,62 +18,79 @@
         <main>
             <section class="panel" id="setupPanel">
                 <h2>Setup</h2>
-                <div class="grid">
-                    <label class="field">
-                        <span>Number of players</span>
-                        <input id="playerCount" type="number" min="1" max="12" value="4" />
-                    </label>
-                    <div class="field">
-                        <span>Starting time</span>
-                        <div class="time-input">
-                            <label>
-                                <span class="muted">Minutes</span>
-                                <input id="startingMinutes" type="number" min="0" max="300" value="20" />
+                <div class="setup-layout">
+                    <div class="setup-main">
+                        <div class="grid">
+                            <label class="field">
+                                <span>Number of players</span>
+                                <input id="playerCount" type="number" min="1" max="12" value="4" />
                             </label>
-                            <label>
-                                <span class="muted">Seconds</span>
-                                <input id="startingSeconds" type="number" min="0" max="59" value="0" />
+                            <div class="field">
+                                <span>Starting time</span>
+                                <div class="time-input">
+                                    <label>
+                                        <span class="muted">Minutes</span>
+                                        <input id="startingMinutes" type="number" min="0" max="300" value="20" />
+                                    </label>
+                                    <label>
+                                        <span class="muted">Seconds</span>
+                                        <input id="startingSeconds" type="number" min="0" max="59" value="0" />
+                                    </label>
+                                </div>
+                            </div>
+                            <label class="field">
+                                <span>Time mode</span>
+                                <select id="timeMode">
+                                    <option value="total" selected>Total time per player</option>
+                                    <option value="perTurn">Per-turn reset time</option>
+                                </select>
+                            </label>
+                            <label class="field">
+                                <span>Time added on turn end/start (seconds)</span>
+                                <input id="turnIncrement" type="number" min="0" max="300" value="0" />
                             </label>
                         </div>
+
+                        <div class="players" id="playersContainer"></div>
+
+                        <div class="actions">
+                            <button class="btn primary" id="startGame">Start Game</button>
+                        </div>
                     </div>
-                    <label class="field">
-                        <span>Time mode</span>
-                        <select id="timeMode">
-                            <option value="total" selected>Total time per player</option>
-                            <option value="perTurn">Per-turn reset time</option>
-                        </select>
-                    </label>
-                    <label class="field">
-                        <span>Time added on turn end/start (seconds)</span>
-                        <input id="turnIncrement" type="number" min="0" max="300" value="0" />
-                    </label>
-                    <label class="field">
-                        <span>Auto-start timer on next player</span>
-                        <select id="autoStart">
-                            <option value="true" selected>Yes</option>
-                            <option value="false">No</option>
-                        </select>
-                    </label>
-                    <label class="field">
-                        <span>Individual pause buttons</span>
-                        <select id="individualPause">
-                            <option value="false" selected>Off</option>
-                            <option value="true">On</option>
-                        </select>
-                    </label>
-                    <label class="field">
-                        <span>Play alert when time is low</span>
-                        <select id="lowTimeAlert">
-                            <option value="true" selected>On</option>
-                            <option value="false">Off</option>
-                        </select>
-                    </label>
-                </div>
 
-                <div class="players" id="playersContainer"></div>
-
-                <div class="actions">
-                    <button class="btn primary" id="startGame">Start Game</button>
+                    <aside class="setup-side">
+                        <h3>Quick Toggles</h3>
+                        <div class="toggle-list">
+                            <div class="field compact">
+                                <span>Auto-start timer</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="autoStartToggle" checked />
+                                    <span class="toggle-track" aria-hidden="true"></span>
+                                </label>
+                            </div>
+                            <div class="field compact">
+                                <span>Colors</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="addColorsToggle" checked />
+                                    <span class="toggle-track" aria-hidden="true"></span>
+                                </label>
+                            </div>
+                            <div class="field compact">
+                                <span>Low-time alert</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="lowTimeAlertToggle" checked />
+                                    <span class="toggle-track" aria-hidden="true"></span>
+                                </label>
+                            </div>
+                            <div class="field compact">
+                                <span>Individual pauses</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="individualPauseToggle" />
+                                    <span class="toggle-track" aria-hidden="true"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </aside>
                 </div>
             </section>
 

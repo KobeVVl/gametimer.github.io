@@ -11,6 +11,7 @@
     --ghost: #2b3242;
     --border: #2f3646;
     --success: #2ed573;
+    --faction-glow: #1a1f2b;
 }
 
 * {
@@ -20,13 +21,13 @@
 }
 
 body {
-    background: radial-gradient(circle at top, #1a1f2b, #0d0f14 65%);
+    background: var(--faction-glow);
     color: var(--text);
     min-height: 100vh;
 }
 
 .app {
-    max-width: 1100px;
+    max-width: 90%;
     margin: 0 auto;
     padding: 32px 24px 56px;
 }
@@ -85,6 +86,40 @@ h3 {
     margin-bottom: 20px;
 }
 
+.setup-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 18px;
+    align-items: start;
+}
+
+.setup-side {
+    background: rgba(15, 19, 28, 0.7);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    position: sticky;
+    top: 24px;
+}
+
+.setup-side h3 {
+    margin-bottom: 12px;
+}
+
+.toggle-list {
+    display: grid;
+    gap: 12px;
+}
+
+.field.compact {
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 12px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
 .field {
     display: flex;
     flex-direction: column;
@@ -103,11 +138,64 @@ h3 {
     border-radius: 8px;
     padding: 8px 10px;
     font-size: 1rem;
+    width: 100%;
+    min-width: 0;
 }
+
+.toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+    border-radius: 999px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    width: fit-content;
+}
+
+.toggle input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.toggle-track {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    border-radius: 999px;
+    background: #1b2130;
+    border: 1px solid var(--border);
+    transition: background 0.2s ease, border 0.2s ease;
+}
+
+.toggle-track::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #c8d0e0;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.toggle input:checked+.toggle-track {
+    background: rgba(91, 140, 255, 0.3);
+    border-color: rgba(91, 140, 255, 0.6);
+}
+
+.toggle input:checked+.toggle-track::after {
+    transform: translateX(24px);
+    background: var(--primary);
+}
+
 
 .time-input {
     display: grid;
-    grid-template-columns: repeat(2, minmax(120px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
 }
 
@@ -115,6 +203,7 @@ h3 {
     display: flex;
     flex-direction: column;
     gap: 6px;
+    min-width: 0;
 }
 
 .players {
@@ -134,6 +223,51 @@ h3 {
     gap: 8px;
 }
 
+.color-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    min-width: 0;
+}
+
+.color-row label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.color-row select {
+    background: #0f131c;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 1rem;
+    width: 100%;
+    min-width: 0;
+}
+
+.color-row input[type="color"] {
+    appearance: none;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0;
+    width: 100%;
+    height: 32px;
+    background: #0f131c;
+    min-width: 0;
+}
+
+.color-row input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 4px;
+}
+
+.color-row input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 8px;
+}
+
 .player-card input {
     background: #0f131c;
     color: var(--text);
@@ -141,6 +275,8 @@ h3 {
     border-radius: 8px;
     padding: 8px 10px;
     font-size: 1rem;
+    width: 100%;
+    min-width: 0;
 }
 
 .actions {
@@ -269,6 +405,20 @@ h3 {
     justify-content: space-between;
 }
 
+.name-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.color-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid #0f131c;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
 .player-row button {
     width: 100%;
 }
@@ -289,6 +439,14 @@ h3 {
 }
 
 @media (max-width: 700px) {
+    .setup-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .setup-side {
+        position: static;
+    }
+
     .timer-header {
         flex-direction: column;
         align-items: flex-start;
