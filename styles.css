@@ -208,7 +208,7 @@ h3 {
 
 .players {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 12px;
     margin-bottom: 20px;
 }
@@ -221,6 +221,24 @@ h3 {
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.player-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.player-card-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.card-move {
+    padding: 8px 10px;
+    min-width: 36px;
+    line-height: 1;
 }
 
 .color-row {
@@ -411,15 +429,38 @@ h3 {
     gap: 10px;
 }
 
+.player-name-button {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font: inherit;
+    font-weight: 700;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+    width: auto;
+}
+
+.player-name-button:hover {
+    color: var(--primary);
+}
+
+.player-name-button:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
 .color-dot {
     width: 14px;
     height: 14px;
+    flex: 0 0 14px;
     border-radius: 50%;
     border: 2px solid #0f131c;
     box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-.player-row button {
+.row-actions button {
     width: 100%;
 }
 

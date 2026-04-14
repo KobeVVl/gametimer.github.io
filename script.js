@@ -7,9 +7,10 @@ const startingSecondsInput = document.getElementById("startingSeconds");
 const timeModeSelect = document.getElementById("timeMode");
 const turnIncrementInput = document.getElementById("turnIncrement");
 const autoStartToggle = document.getElementById("autoStartToggle");
-const individualPauseToggle = document.getElementById("individualPauseToggle");
+const clickNameTurnToggle = document.getElementById("clickNameTurnToggle");
 const lowTimeAlertToggle = document.getElementById("lowTimeAlertToggle");
 const addColorsToggle = document.getElementById("addColorsToggle");
+const multiplierToggle = document.getElementById("multiplierToggle");
 const startGameButton = document.getElementById("startGame");
 const nextPlayerButton = document.getElementById("nextPlayer");
 const pauseToggleButton = document.getElementById("pauseToggle");
@@ -59,6 +60,7 @@ const PRESET_COLORS = [
     { label: "Honey Triarchy", value: "#ffd700" },
     { label: "Warlock", value: "#121212" },
 ];
+const FACTION_SORT_ORDER = [...PRESET_COLORS.map((entry) => entry.label), "Custom"];
 
 let state = {
     players: [],
@@ -71,9 +73,10 @@ let state = {
         timeMode: "total",
         turnIncrement: 0,
         autoStart: true,
-        individualPause: false,
+        clickNameTurn: false,
         lowTimeAlert: true,
         addColors: true,
+        multipliersEnabled: true,
     },
 };
 
@@ -87,8 +90,10 @@ function createPlayerInputs(count) {
         card.className = "player-card";
         const presetName = state.settings?.presetNames?.[i];
         const presetColor = state.settings?.presetColors?.[i];
+        const presetMultiplier = state.settings?.presetMultipliers?.[i];
         const defaultColor = PRESET_COLORS[i % PRESET_COLORS.length].value;
         const resolvedColor = normalizeColor(presetColor || defaultColor);
+        const resolvedMultiplier = clampNumber(presetMultiplier ?? 1, 0.25, 10);
         const matchedPreset = PRESET_COLORS.find((entry) => entry.value === resolvedColor);
         const selectValue = matchedPreset ? matchedPreset.value : "custom";
         const colorRow = colorsEnabled
@@ -107,35 +112,108 @@ function createPlayerInputs(count) {
             </div>
             `
             : "";
+        const multiplierRow = state.settings.multipliersEnabled
+            ? `
+            <label>
+                <span class="muted">Time multiplier</span>
+                <input type="number" class="time-multiplier" min="0.25" max="10" step="0.25" value="${resolvedMultiplier}" />
+            </label>
+            `
+            : "";
         card.innerHTML = `
-      <label>
-        <span>Player ${i + 1}</span>
-                                <input type="text" value="${presetName || DEFAULT_PLAYER_NAMES[i] || `Player ${i + 1}`}" />
-      </label>
+            <div class="player-card-header">
+                <strong class="player-card-title">Player ${i + 1}</strong>
+                <div class="player-card-actions">
+                    <button type="button" class="btn subtle card-move" data-move="up" aria-label="Move player up">↑</button>
+                    <button type="button" class="btn subtle card-move" data-move="down" aria-label="Move player down">↓</button>
+                </div>
+            </div>
+            <label>
+                <span class="muted">Player name</span>
+                <input type="text" value="${presetName || DEFAULT_PLAYER_NAMES[i] || `Player ${i + 1}`}" />
+            </label>
+            ${multiplierRow}
             ${colorRow}
     `;
         playersContainer.appendChild(card);
     }
+
+    refreshSetupPlayerLabels();
 }
 
 function readPlayerInputs() {
     const cards = playersContainer.querySelectorAll(".player-card");
     return Array.from(cards).map((card, index) => {
         const nameInput = card.querySelector("input[type=\"text\"]");
+        const colorSelect = card.querySelector(".color-select");
         const colorInput = card.querySelector(".color-picker");
+        const multiplierInput = card.querySelector(".time-multiplier");
         const name = nameInput?.value.trim() || `Player ${index + 1}`;
+        const timeMultiplier = state.settings.multipliersEnabled
+            ? clampNumber(multiplierInput?.value ?? 1, 0.25, 10)
+            : 1;
         const colorsEnabled = state.settings.addColors;
-        const color = colorsEnabled
+        const selectedColor = colorsEnabled
             ? normalizeColor(colorInput?.value || PRESET_COLORS[0].value)
-            : PRESET_COLORS[0].value;
+            : PRESET_COLORS[index % PRESET_COLORS.length].value;
+        const factionLabel = colorsEnabled
+            ? PRESET_COLORS.find((entry) => entry.value === colorSelect?.value)?.label || "Custom"
+            : PRESET_COLORS[index % PRESET_COLORS.length].label;
         return {
             id: index,
             name,
-            remainingSeconds: state.settings.startingSeconds,
+            remainingSeconds: Math.max(1, Math.round(state.settings.startingSeconds * timeMultiplier)),
             turnsTaken: 0,
             isPaused: false,
-            color,
+            color: selectedColor,
+            factionLabel,
+            timeMultiplier,
         };
+    });
+}
+
+function getFactionSortIndex(factionLabel) {
+    const index = FACTION_SORT_ORDER.indexOf(factionLabel);
+    return index === -1 ? FACTION_SORT_ORDER.length : index;
+}
+
+function sortPlayersByFaction(players) {
+    return [...players].sort((leftPlayer, rightPlayer) => {
+        const factionDifference = getFactionSortIndex(leftPlayer.factionLabel) - getFactionSortIndex(rightPlayer.factionLabel);
+        if (factionDifference !== 0) return factionDifference;
+        return leftPlayer.id - rightPlayer.id;
+    });
+}
+
+function getCardFactionLabel(card) {
+    const colorSelect = card.querySelector(".color-select");
+    if (!state.settings.addColors) {
+        return "Custom";
+    }
+
+    const selectedValue = colorSelect?.value;
+    return PRESET_COLORS.find((entry) => entry.value === selectedValue)?.label || "Custom";
+}
+
+function sortSetupPlayersByFaction() {
+    const cards = Array.from(playersContainer.querySelectorAll(".player-card"));
+    const sortedCards = [...cards].sort((leftCard, rightCard) => {
+        const factionDifference = getFactionSortIndex(getCardFactionLabel(leftCard)) - getFactionSortIndex(getCardFactionLabel(rightCard));
+        if (factionDifference !== 0) return factionDifference;
+        return cards.indexOf(leftCard) - cards.indexOf(rightCard);
+    });
+
+    sortedCards.forEach((card) => playersContainer.appendChild(card));
+    refreshSetupPlayerLabels();
+}
+
+function refreshSetupPlayerLabels() {
+    const cards = Array.from(playersContainer.querySelectorAll(".player-card"));
+    cards.forEach((card, index) => {
+        const title = card.querySelector(".player-card-title");
+        if (title) {
+            title.textContent = `Player ${index + 1}`;
+        }
     });
 }
 
@@ -200,6 +278,7 @@ function getStartingSeconds() {
 }
 
 function savePreset() {
+    const players = readPlayerInputs();
     const preset = {
         playerCount: clampNumber(playerCountInput.value, 1, 12),
         startingMinutes: clampNumber(startingMinutesInput.value, 0, 300),
@@ -207,11 +286,13 @@ function savePreset() {
         timeMode: timeModeSelect.value,
         turnIncrement: clampNumber(turnIncrementInput.value, 0, 300),
         autoStart: getToggleValue(autoStartToggle),
-        individualPause: getToggleValue(individualPauseToggle),
+        clickNameTurn: getToggleValue(clickNameTurnToggle),
         lowTimeAlert: getToggleValue(lowTimeAlertToggle),
         addColorsSelect: getToggleValue(addColorsToggle),
-        playerNames: readPlayerInputs().map((player) => player.name),
-        playerColors: readPlayerInputs().map((player) => player.color),
+        multipliersEnabled: getToggleValue(multiplierToggle),
+        playerNames: players.map((player) => player.name),
+        playerColors: players.map((player) => player.color),
+        playerMultipliers: players.map((player) => player.timeMultiplier),
     };
     localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(preset));
 }
@@ -227,11 +308,14 @@ function loadPreset() {
         timeModeSelect.value = preset.timeMode === "perTurn" ? "perTurn" : "total";
         turnIncrementInput.value = clampNumber(preset.turnIncrement ?? 0, 0, 300);
         autoStartToggle.checked = preset.autoStart !== "false";
-        individualPauseToggle.checked = preset.individualPause === "true";
+        clickNameTurnToggle.checked = preset.clickNameTurn === "true";
         lowTimeAlertToggle.checked = preset.lowTimeAlert !== "false";
         addColorsToggle.checked = preset.addColorsSelect !== "false";
+        multiplierToggle.checked = preset.multipliersEnabled !== "false";
+        state.settings.multipliersEnabled = multiplierToggle.checked;
         state.settings.presetNames = Array.isArray(preset.playerNames) ? preset.playerNames : [];
         state.settings.presetColors = Array.isArray(preset.playerColors) ? preset.playerColors : [];
+        state.settings.presetMultipliers = Array.isArray(preset.playerMultipliers) ? preset.playerMultipliers : [];
     } catch (error) {
         localStorage.removeItem(PRESET_STORAGE_KEY);
     }
@@ -275,25 +359,24 @@ function updatePlayerList() {
             row.classList.add("out");
         }
 
-        const pauseButton = state.settings.individualPause && !isOut
-            ? `<button class="btn ghost" data-pause="${player.id}">${player.isPaused ? "Resume" : "Pause"}</button>`
-            : "";
-
         const removeButton = isOut
             ? `<button class="btn danger" data-remove="${player.id}">Remove Player</button>`
             : "";
 
-        const actionButtons = [pauseButton, removeButton].filter(Boolean).join("");
+        const actionButtons = [removeButton].filter(Boolean).join("");
         const actionsHtml = actionButtons ? `<div class="row-actions">${actionButtons}</div>` : "";
 
         const colorDot = state.settings.addColors
             ? `<span class="color-dot" style="background: ${player.color};"></span>`
             : "";
+        const nameMarkup = state.settings.clickNameTurn
+            ? `<button type="button" class="player-name-button" data-select-turn="${player.id}">${player.name}</button>`
+            : `<strong>${player.name}</strong>`;
         row.innerHTML = `
       <div class="row-top">
                 <div class="name-block">
                                         ${colorDot}
-                    <strong>${player.name}</strong>
+                                        ${nameMarkup}
           <div class="muted">${formatTime(player.remainingSeconds)}</div>
         </div>
         <div>
@@ -338,11 +421,37 @@ function removePlayerById(playerId) {
     updatePlayerList();
 }
 
+function switchToPlayer(playerId) {
+    const nextIndex = state.players.findIndex((player) => player.id === playerId);
+    if (nextIndex === -1 || nextIndex === state.currentIndex) return;
+
+    const currentPlayer = state.players[state.currentIndex];
+    if (currentPlayer) {
+        handleTurnEnd(currentPlayer);
+    }
+
+    state.currentIndex = nextIndex;
+    state.turn += 1;
+
+    const nextPlayer = state.players[state.currentIndex];
+    if (nextPlayer) {
+        handleTurnStart(nextPlayer);
+    }
+
+    updateTimerDisplay();
+    updatePlayerList();
+    updateStatus(`It's ${state.players[state.currentIndex].name}'s turn.`);
+
+    if (state.settings.autoStart) {
+        setRunning(true);
+    } else {
+        setRunning(false);
+    }
+}
+
 function tick() {
     const player = state.players[state.currentIndex];
     if (!player || !state.isRunning) return;
-
-    if (state.settings.individualPause && player.isPaused) return;
 
     player.remainingSeconds = Math.max(0, player.remainingSeconds - 1);
 
@@ -375,7 +484,8 @@ function setRunning(isRunning) {
 
 function applyTurnIncrement(player) {
     if (state.settings.turnIncrement > 0) {
-        player.remainingSeconds += state.settings.turnIncrement;
+        const multiplier = player.timeMultiplier || 1;
+        player.remainingSeconds += Math.max(1, Math.round(state.settings.turnIncrement * multiplier));
     }
 }
 
@@ -388,9 +498,9 @@ function handleTurnEnd(player) {
 
 function handleTurnStart(player) {
     if (state.settings.timeMode === "perTurn") {
-        player.remainingSeconds = state.settings.startingSeconds;
+        const multiplier = player.timeMultiplier || 1;
+        player.remainingSeconds = Math.max(1, Math.round(state.settings.startingSeconds * multiplier));
     }
-    applyTurnIncrement(player);
 }
 
 function moveToNextPlayer() {
@@ -446,9 +556,10 @@ function onStartGame() {
         timeMode: timeModeSelect.value,
         turnIncrement: Math.max(0, Number(turnIncrementInput.value)),
         autoStart: autoStartToggle.checked,
-        individualPause: individualPauseToggle.checked,
+        clickNameTurn: clickNameTurnToggle.checked,
         lowTimeAlert: lowTimeAlertToggle.checked,
         addColors: addColorsToggle.checked,
+        multipliersEnabled: multiplierToggle.checked,
     };
 
     savePreset();
@@ -476,8 +587,15 @@ function onPauseToggle() {
 }
 
 function onManualPause(e) {
+    const selectTurnId = e.target.dataset.selectTurn;
     const pauseId = e.target.dataset.pause;
     const removeId = e.target.dataset.remove;
+
+    if (selectTurnId !== undefined) {
+        if (!state.settings.clickNameTurn) return;
+        switchToPlayer(Number(selectTurnId));
+        return;
+    }
 
     if (removeId !== undefined) {
         removePlayerById(Number(removeId));
@@ -499,12 +617,15 @@ function onColorChange(event) {
 
     if (!state.settings.addColors) return;
 
+    let shouldResort = false;
+
     if (target.classList.contains("color-select")) {
         const card = target.closest(".player-card");
         const picker = card.querySelector(".color-picker");
         if (target.value !== "custom") {
             picker.value = target.value;
         }
+        shouldResort = true;
     }
 
     if (target.classList.contains("color-picker")) {
@@ -513,7 +634,29 @@ function onColorChange(event) {
         const normalized = normalizeColor(target.value);
         const matched = PRESET_COLORS.find((entry) => entry.value === normalized);
         select.value = matched ? matched.value : "custom";
+        shouldResort = true;
     }
+
+    if (shouldResort) {
+        sortSetupPlayersByFaction();
+    }
+}
+
+function onPlayerCardMove(event) {
+    const button = event.target.closest("[data-move]");
+    if (!button) return;
+
+    const card = button.closest(".player-card");
+    if (!card) return;
+
+    const direction = button.dataset.move;
+    if (direction === "up" && card.previousElementSibling) {
+        playersContainer.insertBefore(card, card.previousElementSibling);
+    } else if (direction === "down" && card.nextElementSibling) {
+        playersContainer.insertBefore(card.nextElementSibling, card);
+    }
+
+    refreshSetupPlayerLabels();
 }
 
 function onAdjustClick(event) {
@@ -536,9 +679,14 @@ document.querySelectorAll("[data-adjust]").forEach((button) => {
     button.addEventListener("click", onAdjustClick);
 });
 playersContainer.addEventListener("change", onColorChange);
+playersContainer.addEventListener("click", onPlayerCardMove);
 addColorsToggle.addEventListener("change", () => {
     createPlayerInputs(Number(playerCountInput.value));
     updateFactionBackground();
+});
+multiplierToggle.addEventListener("change", () => {
+    state.settings.multipliersEnabled = multiplierToggle.checked;
+    createPlayerInputs(Number(playerCountInput.value));
 });
 
 loadPreset();
